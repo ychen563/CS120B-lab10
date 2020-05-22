@@ -26,12 +26,10 @@ void CombineLEDsSM();
 enum PWMStates { PWMStart, Wait, PWM_H, PWM_L }PWMState;
 void PWMSM();
 
-enum SetFrequencyStates { SetStart, WaitSet, Set } SetFrequencyState;
-void SetFrequencySM();
-
 unsigned char threeLEDs;
 unsigned char blinkingLED;
 unsigned char PWM;
+
 
 
 int main(void) {
@@ -45,8 +43,7 @@ int main(void) {
     unsigned long BlinkLEDElapsedTime = 1000;
     unsigned long ThreeLEDsElapsedTime = 300;
     unsigned long CombineLEDElapsedTime = 1;
-    unsigned long PWMElapsedTime = 1;
-    unsigned long SetFrequencyElapsedTime = 1;
+    unsigned long PWMElapsedTime = 2;
 
     TimerSet(timerPeriodGCD);
     TimerOn();
@@ -55,7 +52,6 @@ int main(void) {
     TLState = TLStart;
     CombineLEDState = OPStart;
     PWMState = PWMStart;
-    SetFrequencyState = SetStart;
 
     while (1) {
       if (BlinkLEDElapsedTime >= 1000) {
@@ -70,13 +66,9 @@ int main(void) {
          CombineLEDsSM();
          CombineLEDElapsedTime = 0;
       }
-      if (PWMElapsedTime >= 1) {
+      if (PWMElapsedTime >= 2) {
          PWMSM();
          PWMElapsedTime = 0;
-      }
-      if (SetFrequencyElapsedTime >= 1) {
-         SetFrequencySM();
-         SetFrequencyElapsedTime = 0;
       }
       while (!TimerFlag){}
       TimerFlag = 0;
@@ -84,7 +76,6 @@ int main(void) {
       ThreeLEDsElapsedTime += timerPeriodGCD;
       CombineLEDElapsedTime += timerPeriodGCD;
       PWMElapsedTime += timerPeriodGCD;
-      SetFrequencyElapsedTime += timerPeriodGCD;
     }
     return 1;
 }
@@ -176,37 +167,6 @@ void CombineLEDsSM() {
 
 unsigned char L;
 unsigned char H;
-void SetFrequencySM() {
-   unsigned char input = ~PINA & 0x03;
-   switch (SetFrequencyState) {//Transitions
-      case SetStart:
-         SetFrequencyState = WaitSet;
-         break;
-      case WaitSet:
-         if (input == 0x01 || input == 0x02){SetFrequencyState = Set;}
-         else {SetFrequencyState = WaitSet;}
-         break;
-      case Set:
-         SetFrequencyState = WaitSet;
-         break;
-      default:
-         SetFrequencyState = SetStart;
-         break;
-   }//Transitions
-   switch (SetFrequencyState) {//State Actions
-      case SetStart:
-         break;
-      case WaitSet:
-         break;
-      case Set:
-         if (input == 0x01 && H >= 1 && L >= 1){H--;L--;}
-         if (input == 0x02){H++; L++;}
-         break;
-      default:
-         SetFrequencyState = SetStart;
-   }//State Actions
-}
-
 unsigned char i;
 void PWMSM() {
    unsigned char input = ~PINA & 0x04;
@@ -214,6 +174,8 @@ void PWMSM() {
       case PWMStart:
          PWMState = Wait;
          i = 0;
+         L = 0x01;
+         H = 0x01;
          break;
       case Wait:
          if (!input){PWMState = Wait;}

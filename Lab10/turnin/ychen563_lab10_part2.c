@@ -23,15 +23,9 @@ void ThreeLEDsSM();
 enum CombineLEDStates { OPStart, Output }CombineLEDState;
 void CombineLEDsSM();
 
-enum PWMStates { PWMStart, Wait, PWM_H, PWM_L }PWMState;
-void PWMSM();
-
-enum SetFrequencyStates { SetStart, WaitSet, Set } SetFrequencyState;
-void SetFrequencySM();
-
 unsigned char threeLEDs;
 unsigned char blinkingLED;
-unsigned char PWM;
+
 
 
 int main(void) {
@@ -41,12 +35,10 @@ int main(void) {
     /* Insert your solution below */
 
 
-    const unsigned long timerPeriodGCD = 1;
+    const unsigned long timerPeriodGCD = 100;
     unsigned long BlinkLEDElapsedTime = 1000;
     unsigned long ThreeLEDsElapsedTime = 300;
-    unsigned long CombineLEDElapsedTime = 1;
-    unsigned long PWMElapsedTime = 1;
-    unsigned long SetFrequencyElapsedTime = 1;
+    unsigned long CombineLEDElapsedTime = 00;
 
     TimerSet(timerPeriodGCD);
     TimerOn();
@@ -54,8 +46,6 @@ int main(void) {
     BLState = BLStart;
     TLState = TLStart;
     CombineLEDState = OPStart;
-    PWMState = PWMStart;
-    SetFrequencyState = SetStart;
 
     while (1) {
       if (BlinkLEDElapsedTime >= 1000) {
@@ -66,25 +56,15 @@ int main(void) {
          ThreeLEDsSM();
          ThreeLEDsElapsedTime = 0;
       }
-      if (CombineLEDElapsedTime >= 1) {
+      if (CombineLEDElapsedTime >= 100) {
          CombineLEDsSM();
          CombineLEDElapsedTime = 0;
-      }
-      if (PWMElapsedTime >= 1) {
-         PWMSM();
-         PWMElapsedTime = 0;
-      }
-      if (SetFrequencyElapsedTime >= 1) {
-         SetFrequencySM();
-         SetFrequencyElapsedTime = 0;
       }
       while (!TimerFlag){}
       TimerFlag = 0;
       BlinkLEDElapsedTime += timerPeriodGCD;
       ThreeLEDsElapsedTime += timerPeriodGCD;
       CombineLEDElapsedTime += timerPeriodGCD;
-      PWMElapsedTime += timerPeriodGCD;
-      SetFrequencyElapsedTime += timerPeriodGCD;
     }
     return 1;
 }
@@ -148,8 +128,8 @@ void ThreeLEDsSM() {
   } // State actions
 }
 
-unsigned char tmpB;
 void CombineLEDsSM() {
+   unsigned char tmpB;
    switch (CombineLEDState) { //Transitions
       case OPStart:
          CombineLEDState = Output;
@@ -165,86 +145,12 @@ void CombineLEDsSM() {
        case OPStart:
          break;
        case Output:
-         tmpB = threeLEDs | (blinkingLED << 3) | (PWM << 4);
+         tmpB = threeLEDs | (blinkingLED << 3);
          break;
        default:
          break;
 	}//State action
 
     PORTB = tmpB;
-}
-
-unsigned char L;
-unsigned char H;
-void SetFrequencySM() {
-   unsigned char input = ~PINA & 0x03;
-   switch (SetFrequencyState) {//Transitions
-      case SetStart:
-         SetFrequencyState = WaitSet;
-         break;
-      case WaitSet:
-         if (input == 0x01 || input == 0x02){SetFrequencyState = Set;}
-         else {SetFrequencyState = WaitSet;}
-         break;
-      case Set:
-         SetFrequencyState = WaitSet;
-         break;
-      default:
-         SetFrequencyState = SetStart;
-         break;
-   }//Transitions
-   switch (SetFrequencyState) {//State Actions
-      case SetStart:
-         break;
-      case WaitSet:
-         break;
-      case Set:
-         if (input == 0x01 && H >= 1 && L >= 1){H--;L--;}
-         if (input == 0x02){H++; L++;}
-         break;
-      default:
-         SetFrequencyState = SetStart;
-   }//State Actions
-}
-
-unsigned char i;
-void PWMSM() {
-   unsigned char input = ~PINA & 0x04;
-   switch (PWMState) {//Transitions
-      case PWMStart:
-         PWMState = Wait;
-         i = 0;
-         break;
-      case Wait:
-         if (!input){PWMState = Wait;}
-         else if (input){PWMState = PWM_H; i = 0;}
-         break;
-      case PWM_H:
-         if (!input){PWMState = Wait;}
-         else if (i <= H){PWMState = PWM_H;i++;}
-         else if (i > H){PWMState = PWM_L; i = 0;}
-         break;
-      case PWM_L:
-         if (i <= L){PWMState = PWM_L;i++;}
-         else if (i > L){PWMState = PWM_H;}
-         break;
-      default:
-         PWMState = PWMStart;
-         break;
-   }//Transitions
-   switch (PWMState) {//State Action
-      case PWMStart:
-         break;
-      case Wait:
-         break;
-      case PWM_H:
-         PWM = 0x01;
-         break;
-      case PWM_L:
-         PWM = 0x00;
-         break;
-      default:
-         break;
-   }//State Action
-}
+} 
 
