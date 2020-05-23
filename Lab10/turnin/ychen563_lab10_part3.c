@@ -43,7 +43,7 @@ int main(void) {
     unsigned long BlinkLEDElapsedTime = 1000;
     unsigned long ThreeLEDsElapsedTime = 300;
     unsigned long CombineLEDElapsedTime = 1;
-    unsigned long PWMElapsedTime = 2;
+    unsigned long PWMElapsedTime = 1;
 
     TimerSet(timerPeriodGCD);
     TimerOn();
@@ -66,7 +66,7 @@ int main(void) {
          CombineLEDsSM();
          CombineLEDElapsedTime = 0;
       }
-      if (PWMElapsedTime >= 2) {
+      if (PWMElapsedTime >= 1) {
          PWMSM();
          PWMElapsedTime = 0;
       }
@@ -174,8 +174,8 @@ void PWMSM() {
       case PWMStart:
          PWMState = Wait;
          i = 0;
-         L = 0x01;
-         H = 0x01;
+         L = 0x02;
+         H = 0x02;
          break;
       case Wait:
          if (!input){PWMState = Wait;}
